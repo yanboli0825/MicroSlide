@@ -1,0 +1,10 @@
+06-06 17:11:55:062  nl_EnumDevices 417 begin
+06-06 17:11:55:063  CSerialCommunication::EnumDevices 444 begin
+06-06 17:11:55:064  CSerialCommunication::EnumDevices 450 nlds_enum_serial_ports count_serial=0
+06-06 17:11:55:064  CSerialCommunication::EnumDevices 452 nlds_detect_serial_settings count_serial=0
+06-06 17:11:55:064  CSerialCommunication::EnumDevices 466 realSerialCount=0
+06-06 17:11:55:064  [nl_EnumDevices][437] serialCount=0
+06-06 17:11:55:066  [nl_EnumDevices][448] usbCount=0
+06-06 17:11:57:721  [nl_EnumDevices][486] networkCount=0
+06-06 17:11:57:721  [nl_EnumDevices][546] return deviceCount=0
+06-06 17:11:57:722  ReleaseDevices 329 end
