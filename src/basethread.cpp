@@ -1,9 +1,9 @@
-﻿#include "basethread.h"
+﻿#include "BaseThread.h"
 
-
-BaseThread::BaseThread(QObject *parent) : m_stopped(true), m_closed(false)
+BaseThread::BaseThread(QObject* parent)
+    : m_stopped(true)
+    , m_closed(false)
 {
-
 }
 
 bool BaseThread::is_stopped()

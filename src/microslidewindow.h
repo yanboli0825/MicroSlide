@@ -1,25 +1,14 @@
 ﻿#pragma once
 
 #include <QMainWindow>
-#include <QSqlDatabase>
-#include "qsqltablemodel.h"
-
+#include <memory>
 
 QT_FORWARD_DECLARE_CLASS(QDialogButtonBox)
 QT_FORWARD_DECLARE_CLASS(QPushButton)
-QT_FORWARD_DECLARE_CLASS(QSqlTableModel)
+QT_FORWARD_DECLARE_CLASS(QLabel)
 
+#define PIC_WIDTH 325 ///< 图片在ImageTable中的显示宽度。曾用值：280
 
-//#define OPEN_DATA_BASE_STORE
-
-// 定义图片在左侧栏中的显示宽度
-#define PIC_WIDTH 325       // 之前是280
-
-
-class QLabel;
-
-
-/*Class declaration*/
 class SysConfigForm;
 struct AIResult;
 struct BestImage;
@@ -27,10 +16,10 @@ class MagDebug;
 class FileTest;
 class ScannerProcessor;
 
-namespace Ui {
-    class MicroSlideWindow;
+namespace Ui
+{
+class MicroSlideWindow;
 }
-
 
 class MicroSlideWindow : public QMainWindow
 {
@@ -40,181 +29,148 @@ public:
     explicit MicroSlideWindow(QWidget* parent = nullptr);
     ~MicroSlideWindow();
 
-    void initApp();
-    void initBusNumWindow();            // 初始化得到设备id
-    void initVariable();                // 初始化一些变量
-    void initTableImg();                // 初始化表格-输出结果样式
-    void initUI();                      // ui上的优化
+    /**
+     * @brief 初始化 PowerPC 设备，准备Windows上位机资源
+     *
+     *@note 必须在 MicroSlideWindow 构造函数中调用，只能调用一次
+     */
+    void initializePowerPC();
 
-    //QString m_img_save_path;
+    /**
+     * @brief 释放 PowerPC 设备资源
+     *
+     */
+    void releasePowerPC();
 
+    /**
+     * @brief 建立信号和槽函数连接
+     *
+     */
+    void setupConnections();
 
-    void initDataBase();
-    
+    /**
+     * @brief 设置图片栏的样式，包括表头字体、滑杆等
+     */
+    void setImgTableStyle();
+
+    /**
+     * @brief 将诊断结果按钮设置为非互斥模式
+     */
+    void setBtnsNonExclusive();
 
 public slots:
     /**
-     * @brief 将筛选出来的图片及AI处理的结果显示在图片栏
+     * @brief 将预处理后的图片及AI推理结果显示在ImageTable中
      */
-    void slot_add_image_to_table(const BestImage* img, const AIResult* img_inference_res, QString _video_res);
+    void slot_addImageToTable(const std::shared_ptr<BestImage>& img, const std::shared_ptr<AIResult>& img_inference_res,
+                              const QString& _video_res);
 
     /**
      * @brief 实时预览图片，增强显示的实时性
      * @param _preview_img 预览图片
      * @param _best_img_num 筛选出的图片的数量，用于确定预览图片所在的行数
      */
-    void slot_add_preview_img_to_table_line(QPixmap _preview_img, int _best_img_num);
-
-    /**
-     * @brief 删除预览图片
-     * @param _best_img_num 筛选出的图片的数量，用于确定预览图片所在的行数
-     */
-    void slot_delete_preview_img_from_table_line(int _best_img_num);
-
-    void slot_change_preview_img_from_table_line(unsigned int _best_img_num);
+    void slot_addPreviewImgToTable(QPixmap _preview_img, int _best_img_num);
 
     /**
      * @brief 系统配置修改槽函数
-     * @param _sharp 
-     * @param _similarity 
-     * @param _area 
-     * @param _filepath 
-     * @param db_addr 
-     * @param db_port 
+     * @param _sharp
+     * @param _similarity
+     * @param _area
+     * @param _filepath
+     * @param db_addr
+     * @param db_port
      */
-    void slot_on_syscfgChanged(int _sharp, int _similarity, int _area, QString _filepath, std::string db_addr, int db_port);
+    void slot_on_syscfgChanged(int _sharp, int _similarity, int _area, QString _filepath, std::string db_addr,
+                               int db_port);
 
     /**
-     * @brief 11111111111111111111
-     * @param diagnose 
+     * @brief 等待线程池推理完所有图片后，控制确定病理号的按钮以及完成诊断相关UI操作
+     * @param diagnose 医生给出的诊断结果，用于发送给数据库
      */
-    void slot_on_ai_inference_finished(QString diagnose);
-
-    /*wll数据库相关*/
-    void slot_on_update_view_port();
-
+    void slot_threadPoolFinished(QString diagnose);
 
 signals:
-    void signal_ai_inference_finished(QString diagnose);
+    /**
+     * @brief 当AI推理线程池处理完成所有图片后发出信号
+     *
+     * @param diagnose 医生给出的诊断结果
+     */
+    void signal_threadPoolFinished(QString diagnose);
 
-    void doctor_diagnosis_finished();
-
+    /**
+     * @brief 解除被事件循环阻塞的线程的信号
+     *
+     */
+    void signal_unblockThread();
 
 private:
+    /*PowerPC设备相关*/
+    int m_busNum = 0; ///< PowerPC设备总线号
+
     Ui::MicroSlideWindow* ui;
-    SysConfigForm* sysCfgForm;
-    FileTest* ft;
-    MagDebug* magdebug;
-    QSqlDatabase db;
-    int m_count_res_img = 0;
-
-    /*扫描仪对象*/
-    ScannerProcessor* m_scanner;
-    bool is_scannerConnected;
-    QTimer* m_scannerTimer;
-    QTimer* m_scannerChecker;
-
-    /*powerPC有关设备问题*/
-    int m_cur_bus_num = 0;                    /*总线id号*/
-
-
-    /*wll数据库相关*/
-    QSqlTableModel* model;
-    QSqlTableModel* model2;
-    unsigned int m_db_id = 0;
-    int m_db_patient_id;
-    QString m_db_slice_id = "TEST";
+    SysConfigForm* systenCfg; ///< 系统配置窗口
+    FileTest* ft;             ///< 文件测试窗口
+    MagDebug* magdebug;       ///< 倍率调试窗口
 
     /*扫描仪相关*/
     /**
      * @brief 处理扫描仪输入的PID
-     * 
+     *
      * @param input 输入的有效PID
      */
-    void scanner_PID_captured(const std::string& input);
+    void slot_scannerPIDCaptured(const std::string& input);
 
     /**
      * @brief 初始化扫描仪设备
      */
-    void initialize_scanner();
+    void initializeScanner();
 
     /**
      * @brief 释放扫描仪设备
      */
-    void release_scanner();
+    void releaseScanner();
 
     /**
-     * @brief 连接与扫描仪相关的信号和槽函数
+     * @brief 连接与扫描仪相关的信号和槽函数。主要是处理扫描仪解码数据的槽函数
      */
-    void setup_scanner_connections();
+    void setupScannerConnections();
 
     /**
-     * @brief 设置扫描仪连接状态
-     * @param isConnected 
+     * @brief 从按钮获取医生诊断结果
+     *
+     * @return 医生诊断结果
      */
-    void set_scanner_state(bool isConnected);
+    QString getDoctorDiagnosisResultFromBtn();
 
-    void update_scannerTimer_state();
-
-
-private slots:
     /**
      * @brief 清空图片栏中的所有widget。QT会自动释放widget的内存
      */
-    void clear_image_in_table();
+    void clearImagesInTable();
 
+private slots:
+
+    /**
+     * @brief 点击确认病理号按钮后的槽函数
+     *
+     */
     void on_btn_id_clicked();
 
+    /**
+     * @brief 点击确认医生诊断结果按钮后的槽函数
+     *
+     */
     void on_btn_confirm_doc_clicked();
 
-    QString get_doctor_diagnosis_result();
-
+    /**
+     * @brief 点击系统配置菜单后的槽函数
+     *
+     */
     void on_act_sysConfig_triggered();
 
-    /*wll数据库相关*/
-    void on_combo_diagnose_currentTextChanged(const QString& arg1);
-
-    void on_btn_search_clicked();
-
-    void on_btn_all_info_clicked();
-
-    void slot_on_tableView_db_2_double_clicked(const QModelIndex& index);
-
-    void slot_on_tableView_data_changed(const QModelIndex& index);
-
-    void on_btn_close_res_img_clicked();
-
-
-    //添加数据到病理结果表
-    void slot_on_add_data_to_diagnosis_results(int patient_id = 0,       //病人id，可以理解为病人的病历号
-        QString slice_id = "",     //切片名
-        int mag = 0,              //放大倍数
-        QString img_path = "",    //图像存储路径
-        QString diag_res = "",     //诊断结果
-        float confidence = 0,     //置信度
-        int coord_x = 0,          //判断依据x坐标
-        int coord_y = 0          //判断依据y坐标
-    );
-
-
+    /**
+     * @brief 点击文件测试菜单后的槽函数
+     *
+     */
     void on_action_filetest_triggered();
-
-    /*扫描仪相关函数*/
-    /**
-     * @brief 弹窗提示扫描仪错误事件
-     * @param error 错误提示字符
-     */
-    void on_scanner_error_occured(const QString &error);
-
-    /**
-     * @brief 每隔一段时间尝试初始化扫描仪
-     */
-    void try_initialize_scanner();
-
-    /**
-     * @brief 当扫描仪连接后，一定时间查询一下扫描仪USB口状态，判断设备是否拔出
-     */
-    void check_scanner_usb_status();
-
 };
-

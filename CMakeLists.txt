@@ -43,50 +43,53 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 set(HEADERS
-    src/basethread.h
-    src/bgcamera.h
+    src/BaseThread.h
+    src/BgCamera.h
     src/CamImgPool.h
-    src/db_raw.h
-    src/deployment.h
-    src/filetest.h
+    src/OnnxDeployer.h
+    src/FileTest.h
     src/hpec_lib.h
     src/IniParser.h
-    src/magdebug.h
-    src/microslidewindow.h
-    src/scanner_processor.h
-    src/sysconfigform.h
+    src/Logger.h
+    src/MagnificationDetector.h
+    src/MicroSlideWindow.h
+    src/ScannerProcessor.h
+    src/SystemCfg.h
     src/tmagnifydetect.h
+    src/utils.h
 )
 set(SOURCES
-    src/basethread.cpp
-    src/bgcamera.cpp
+    src/BaseThread.cpp
+    src/BgCamera.cpp
     src/CamImgPool.cpp
-    src/deployment.cpp
-    src/filetest.cpp
+    src/OnnxDeployer.cpp
+    src/FileTest.cpp
     src/hpec_lib.cpp
     src/IniParser.cpp
-    src/magdebug.cpp
+    src/Logger.cpp
+    src/MagnificationDetector.cpp
 	src/main.cpp
-    src/microslidewindow.cpp
-    src/scanner_processor.cpp
-    src/sysconfigform.cpp
+    src/MicroSlideWindow.cpp
+    src/ScannerProcessor.cpp
+    src/SystemCfg.cpp
     src/tmagnifydetect.cpp
+    src/utils.cpp
 )
 
 
 # GENERATE AN EXECUTABLE FILE
 add_executable(${PROJECT_NAME}
-    WIN32 
     ${SOURCES}
     ${HEADERS}
     assets/icons/MicroSlide.rc
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    WIN32_LEAN_AND_MEAN     # 减少 Windows.h 包含的内容
-    _WIN32_WINNT=0x0A00     # Windows 10
-    _WINSOCKAPI_            # 防止包含 winsock.h
-)
+# DISABLE CONSOLE WINDOW ON WINDOWS
+if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WIN32_EXECUTABLE TRUE
+    )
+endif()
 
 # 添加链接器标志以支持 /GL 编译的库
 if(MSVC)
@@ -96,9 +99,18 @@ if(MSVC)
     )
 endif()
 
+# PREPROCESSOR DEFINITIONS
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    WIN32_LEAN_AND_MEAN     
+    NOMINMAX                
+    _WIN32_WINNT=0x0A00     
+    _WINSOCKAPI_            
+)
+
+
 # INCLUDE
 target_include_directories(${PROJECT_NAME} PRIVATE
-    src
+    src/
     external/json/include
     external/opencv-4.10.0/build/include
     external/newland/include
@@ -106,6 +118,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     external/DBInterfaceDLL/include
     external/hpec_lib/include
     external/bgimaging/include
+    external/spdlog-1.16.0/include
 )
 
 
@@ -132,21 +145,14 @@ target_link_directories(${PROJECT_NAME} PRIVATE
 # LINK OPENCV LIBS
 target_link_libraries(${PROJECT_NAME} PRIVATE
     bgimaging
-    DBInterfaceDLL
     N-ScanHub
     onnxruntime
     opencv_world4100$<$<CONFIG:Debug>:d>
     hl_lib$<$<CONFIG:Debug>:d>
     DBInterfaceDLL$<$<CONFIG:Debug>:d>
-    # $<$<CONFIG:Debug>:opencv_world4100d>
-    # $<$<CONFIG:Release>:opencv_world4100>
-    # $<$<CONFIG:Debug>:hl_libd>
-    # $<$<CONFIG:Release>:hl_lib>
-    # $<$<CONFIG:Debug>:DBInterfaceDLLd>
-    # $<$<CONFIG:Release>:DBInterfaceDLL>
 )
 
-# 复制运行时依赖的 DLL 到输出目录
+# POST-BUILD COPY DLLS
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     # OpenCV DLLs
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

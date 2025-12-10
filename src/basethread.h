@@ -1,5 +1,4 @@
-﻿#ifndef BASETHREAD_H
-#define BASETHREAD_H
+﻿#pragma once
 
 #include <QObject>
 #include <windows.h>
@@ -8,7 +7,7 @@ class BaseThread : public QObject
 {
     Q_OBJECT
 public:
-    explicit BaseThread(QObject *parent = nullptr);
+    explicit BaseThread(QObject* parent = nullptr);
     bool is_stopped();
     bool is_closed();
 
@@ -23,5 +22,3 @@ public slots:
     void open();
     void close();
 };
-
-#endif // BASETHREAD_H

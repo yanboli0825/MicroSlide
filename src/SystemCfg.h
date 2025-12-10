@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <QWidget>
 
-
-namespace Ui {
-    class SysConfigForm;
+namespace Ui
+{
+class SysConfigForm;
 }
 
 class SysConfigForm : public QWidget
@@ -11,7 +11,7 @@ class SysConfigForm : public QWidget
     Q_OBJECT
 
 public:
-    explicit SysConfigForm(QWidget *parent = nullptr);
+    explicit SysConfigForm(QWidget* parent = nullptr);
     ~SysConfigForm();
 
     /**
@@ -23,7 +23,8 @@ signals:
     /**
      * @brief 当点击保存按钮时发出信号，传递用户输入的清晰度、相似度、区块面积阈值，以及显微镜图片保存路径
      */
-    void signal_syscfgChanged(int _sharp, int _similarity, int _area, QString _filepath, std::string db_addr, int db_port);
+    void signal_syscfgChanged(int _sharp, int _similarity, int _area, QString _filepath, std::string db_addr,
+                              int db_port);
 
 private slots:
     /**
@@ -34,15 +35,13 @@ private slots:
     /**
      * @brief 保存
      */
-    void on_btn_save_clicked(); 
+    void on_btn_save_clicked();
 
     /**
      * @brief 取消
      */
-    void on_btn_return_clicked(); 
+    void on_btn_return_clicked();
 
 private:
-    Ui::SysConfigForm *ui;
+    Ui::SysConfigForm* ui;
 };
-
-

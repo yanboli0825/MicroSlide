@@ -1,7 +1,7 @@
 ﻿#include "CamImgPool.h"
+
 #include <QDebug>
 #include <iostream>
-
 
 CImgPool::CImgPool()
 {
@@ -13,10 +13,10 @@ CImgPool::~CImgPool()
     disable_mem_pool();
 }
 
-//创建结点
+// 创建结点
 static int mem_pool_create(HL_IMG_POOL_LIST* pool_list)
 {
-    unsigned int size = pool_list->mem_size;        
+    unsigned int size = pool_list->mem_size;
     HL_IMG_POOL_NODE* tmp_node = (HL_IMG_POOL_NODE*)malloc(sizeof(HL_IMG_POOL_NODE));
     if (tmp_node == NULL)
     {
@@ -24,8 +24,9 @@ static int mem_pool_create(HL_IMG_POOL_LIST* pool_list)
     }
 
     memset(tmp_node, 0, sizeof(HL_IMG_POOL_NODE));
-    tmp_node->m_pData = (uchar*) malloc(size);
-    if(tmp_node->m_pData == NULL){
+    tmp_node->m_pData = (uchar*)malloc(size);
+    if (tmp_node->m_pData == NULL)
+    {
         free(tmp_node);
         return IMAGE_POOL_ERROR;
     }
@@ -148,7 +149,7 @@ void CImgPool::mem_pool_clear()
     for (iter = g_mem_pool_list.used_head.begin(); iter != g_mem_pool_list.used_head.end(); iter++)
     {
         HL_IMG_POOL_NODE* ops = iter->second;
-        g_mem_pool_list.free_head.insert(make_pair(ops,ops));
+        g_mem_pool_list.free_head.insert(make_pair(ops, ops));
     }
 
     g_mem_pool_list.used_head.clear();
@@ -184,10 +185,11 @@ int CImgPool::mem_pool_reset()
     return ret;
 }
 
-HL_IMG_POOL_NODE *CImgPool::malloc_free_mem_pool()
+HL_IMG_POOL_NODE* CImgPool::malloc_free_mem_pool()
 {
     HL_IMG_POOL_NODE* ops = NULL;
-    if(g_mem_pool_list.sem_free.hl_sem_wait(CAM_SEM_WAIT_10MS) != CAM_SEM_OK){
+    if (g_mem_pool_list.sem_free.hl_sem_wait(CAM_SEM_WAIT_10MS) != CAM_SEM_OK)
+    {
         return NULL;
     }
     g_mem_pool_list.lock.lock();
@@ -209,9 +211,10 @@ HL_IMG_POOL_NODE *CImgPool::malloc_free_mem_pool()
     return ops;
 }
 
-void CImgPool::fill_deal_mem_pool(HL_IMG_POOL_NODE *ops)
+void CImgPool::fill_deal_mem_pool(HL_IMG_POOL_NODE* ops)
 {
-    if(ops == NULL){
+    if (ops == NULL)
+    {
         return;
     }
     g_mem_pool_list.lock.lock();
@@ -231,10 +234,11 @@ void CImgPool::fill_deal_mem_pool(HL_IMG_POOL_NODE *ops)
     g_mem_pool_list.lock.unlock();
 }
 
-HL_IMG_POOL_NODE *CImgPool::malloc_used_mem_pool()
+HL_IMG_POOL_NODE* CImgPool::malloc_used_mem_pool()
 {
     HL_IMG_POOL_NODE* ops = NULL;
-    if(g_mem_pool_list.sem_used.hl_sem_wait(CAM_SEM_WAIT_FOREVER) != CAM_SEM_OK){
+    if (g_mem_pool_list.sem_used.hl_sem_wait(CAM_SEM_WAIT_FOREVER) != CAM_SEM_OK)
+    {
         return NULL;
     }
     g_mem_pool_list.lock.lock();
@@ -256,9 +260,10 @@ HL_IMG_POOL_NODE *CImgPool::malloc_used_mem_pool()
     return ops;
 }
 
-void CImgPool::free_back_mem_pool(HL_IMG_POOL_NODE *ops)
+void CImgPool::free_back_mem_pool(HL_IMG_POOL_NODE* ops)
 {
-    if(ops == NULL){
+    if (ops == NULL)
+    {
         return;
     }
     g_mem_pool_list.lock.lock();
@@ -282,39 +287,40 @@ int CImgPool::mem_pool_list_empty(unsigned int type)
 {
     switch (type)
     {
-    case IMAGE_FREE_LIST_TYPE:
-        if (g_mem_pool_list.free_head.empty())
-        {
-            return 0;
-        }
-        break;
-    case IMAGE_DEAL_LIST_TYPE:
-        if (g_mem_pool_list.deal_head.empty())
-        {
-            return 0;
-        }
-        break;
-    case IMAGE_USED_LIST_TYPE:
-        if (g_mem_pool_list.used_head.empty())
-        {
-            return 0;
-        }
-        break;
-    case IMAGE_BACK_LIST_TYPE:
-        if (g_mem_pool_list.back_head.empty())
-        {
-            return 0;
-        }
-        break;
-    default:
-        break;
+        case IMAGE_FREE_LIST_TYPE:
+            if (g_mem_pool_list.free_head.empty())
+            {
+                return 0;
+            }
+            break;
+        case IMAGE_DEAL_LIST_TYPE:
+            if (g_mem_pool_list.deal_head.empty())
+            {
+                return 0;
+            }
+            break;
+        case IMAGE_USED_LIST_TYPE:
+            if (g_mem_pool_list.used_head.empty())
+            {
+                return 0;
+            }
+            break;
+        case IMAGE_BACK_LIST_TYPE:
+            if (g_mem_pool_list.back_head.empty())
+            {
+                return 0;
+            }
+            break;
+        default:
+            break;
     }
 
     return 1;
 }
 
-
-BestImage::BestImage(QImage _image, QString _time_stamp, unsigned int _image_num, unsigned int _total_image_count, unsigned int _sharpness, unsigned int _similarity, unsigned int _effective_area, unsigned int _normalized_sharpness, unsigned int _magnification, bool _save)
+BestImage::BestImage(QImage _image, QString _time_stamp, unsigned int _image_num, unsigned int _total_image_count,
+                     unsigned int _sharpness, unsigned int _similarity, unsigned int _effective_area,
+                     unsigned int _normalized_sharpness, unsigned int _magnification, bool _save)
 {
     image = _image;
     time_stamp = _time_stamp;
@@ -359,7 +365,7 @@ BestImage::BestImage()
 
 void BestImage::clear()
 {
-    image = QImage(1824, 1216,QImage::Format_RGB888);
+    image = QImage(1824, 1216, QImage::Format_RGB888);
     image.fill(Qt::black);
     time_stamp = "";
     image_num = 0;

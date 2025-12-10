@@ -1,0 +1,59 @@
+---
+Language:        Cpp
+# 基于 Microsoft 风格（适配 Windows 环境），但进行大量现代化覆盖
+BasedOnStyle:    Microsoft
+
+# =============================================================================
+# 核心排版：花括号与缩进
+# =============================================================================
+BreakBeforeBraces: Allman
+
+# 缩进宽度：4空格
+IndentWidth:     4
+# 禁止使用 Tab
+UseTab:          Never
+# 行宽限制：120 (现代显示器标准，80太窄了)
+ColumnLimit:     120
+
+# 访问修饰符 (public/private) 向左偏移 4 格 -> 顶格写
+# class A {
+# public:  <-- 顶格
+#     void foo();
+# };
+AccessModifierOffset: -4
+
+# 命名空间内部不缩进 (防止多层 namespace 导致代码一直向右缩进)
+NamespaceIndentation: None
+
+# =============================================================================
+# 细节对齐与空格
+# =============================================================================
+# 指针和引用靠左 (int* p)，强调类型
+PointerAlignment: Left
+
+# 包含头文件自动排序 (保持依赖整洁)
+SortIncludes:    true
+# 在 include 块中分类排序 (例如 C++ 标准库在上，第三方库在下)
+IncludeBlocks:   Regroup
+
+# 允许短的空函数在一行: void foo() {}
+AllowShortFunctionsOnASingleLine: Empty
+# 允许短的 lambda 在一行
+AllowShortLambdasOnASingleLine: All
+# 禁止 if 在一行 (强制换行增加可读性): if (a) return; -> 禁止
+AllowShortIfStatementsOnASingleLine: Never
+
+# 保持 switch case 的缩进
+# switch (x) {
+#     case 1: <-- 缩进
+IndentCaseLabels: true
+
+# 构造函数初始化列表的样式
+# MyClass()
+#     : m_a(1)
+#     , m_b(2) {}
+BreakConstructorInitializers: BeforeComma
+
+# 移除块开始处的空行
+KeepEmptyLinesAtTheStartOfBlocks: false
+...
