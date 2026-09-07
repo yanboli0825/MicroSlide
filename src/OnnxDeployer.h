@@ -12,9 +12,11 @@
 
 /*Onnx AI模型路径*/
 #define ONNX_CTRANS_PATH L"../../../assets/onnx_model/ctranspath_v14_batch28.onnx" // 特征提取基础模型
-#define ONNX_POLYP_PATH L"../../../assets/onnx_model/AMIL_1219_blur_v14.onnx"      // 肠息肉。L表示该字符串为宽字符
+#define ONNX_POLYP_PATH L"../../../assets/onnx_model/AMIL_1219_blur_v14.onnx"      // 肠息肉分类预测模型路径
 #define ONNX_FROZEN_PATH L"../../../assets/onnx_model/frozen_cancer.onnx"          // 冷冻切片。目前仅支持癌症筛查
 #define ONNX_MMR_PATH L"../../../assets/onnx_model/MMR.onnx"                       // MMR基因预测，针对肠息肉切片
+#define ONNX_LUNG_PATH L"../../../assets/onnx_model/Lung.onnx"                     // 肺分类预测模型路径
+#define ONNX_LYMPHNODE_PATH L"../../../assets/onnx_model/LymphNode.onnx"           // 淋巴结分类预测模型路径
 
 /*裁剪patch参数*/
 #define WINDOW_SIZE 454  // 裁剪patch时的窗长
@@ -26,20 +28,21 @@
 #define BINARY_THRESHOLD 200 // patchFilter()函数的参数，用于过滤二值图像
 #define VAILD_THRESHOLD 0.03 // patchFilter()函数的参数，用于判断patch是否有效
 
-/*常量定义*/
-// inline std::vector<std::string> POLYP_CLASSES = {"C", "SSA", "TA", "HP", "IP", "NM"};
-
 /*切片来源定义*/
-#define SLICESOURCE_STOMACH "2000"  // 胃
-#define SLICESOURCE_GUT "2010"      // 肠
-#define SLICESOURCE_PROSTATE "2020" // 前列腺
-#define SLICESOURCE_UNKNOWN "1000"  // 未知,暂时当冰冻切片使用
-#define SLICESOURCE_DEFAULT "1000"  // 均不属于上面定义的来源类型时，默认使用癌和非癌分类模型
+#define SLICESOURCE_STOMACH "2000"   // 胃
+#define SLICESOURCE_GUT "2010"       // 肠
+#define SLICESOURCE_PROSTATE "2020"  // 前列腺
+#define SLICESOURCE_LUNG "1140"      // 肺
+#define SLICESOURCE_LYMPHNODE "1160" // 淋巴结
+#define SLICESOURCE_UNKNOWN "1000"   // 未知,暂时当冰冻切片使用
+#define SLICESOURCE_DEFAULT "1000"   // 均不属于上面定义的来源类型时，默认使用癌和非癌分类模型
 
 /*定义疾病类型*/
 #define CLSNAME_STOMACH {"NM", "C"}
 #define CLSNAME_GUT {"C", "SSA", "TA", "HP", "IP", "NM"}
 #define CLSNAME_PROSTATE {"NM", "C"}
+#define CLSNAME_LUNG {"NM", "OP", "SCC", "AIS", "MIA", "AC"}
+#define CLSNAME_LYMPHNODE {"N", "P"}
 #define CLSNAME_KNOWN {"NM", "C"}
 #define CLSNAME_DEFAULT {"NM", "C"}
 
@@ -182,6 +185,8 @@ private:
 
     std::unique_ptr<OrtComponents> embeddingOrtComponents;
     std::unique_ptr<OrtComponents> polypOrtComponents;
+    std::unique_ptr<OrtComponents> lungOrtComponents;
+    std::unique_ptr<OrtComponents> lymphNodeOrtComponents;
     std::unique_ptr<OrtComponents> mmrOrtComponents;
     std::unique_ptr<OrtComponents> frozenSectionOrtComponents;
 };

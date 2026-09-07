@@ -467,10 +467,12 @@ void MicroSlideWindow::on_btn_id_clicked()
     ui->lineEdit_id->setEnabled(false);
     ui->btn_id->setEnabled(false);
 
-#ifdef FTP_SEND
+#ifdef DB_SEND
     // 向数据库发送病理号、切片号等信息，从PIS系统中获取切片部位、镜下描述等医学信息
+    WSAInit();
     SOCKET dbClientSocket;
-    int dbConnectRes = dbSockInit(dbClientSocket, ui->widget_camera->m_dbAddr, ui->widget_camera->m_dbPort);
+    unsigned short port = static_cast<unsigned short>(ui->widget_camera->m_dbPort);
+    int dbConnectRes = dbSockInit(dbClientSocket, ui->widget_camera->m_dbAddr, port, 5);
 
     // 检查是否成功初始化了db套接字
     if (!dbConnectRes)
@@ -481,8 +483,10 @@ void MicroSlideWindow::on_btn_id_clicked()
             utils::wcharToString(ui->widget_camera->m_microDevice.id), // 显微镜唯一ID
             "A01"                                                      // 数据包类型
         };
-        dbGetPathinfo(&query, dbClientSocket, ui->widget_camera->m_slideInfo.get());
+        dbGetPathinfo(&query, dbClientSocket, ui->widget_camera->m_slideInfo.get(), ui->widget_camera->m_dbAddr, port,
+                      5);
         dbSockClose(dbClientSocket);
+        WSAClose();
 
         // 判断从数据库拿到的数据是否有效
         if (ui->widget_camera->m_slideInfo->pathological_id == "")
@@ -496,6 +500,10 @@ void MicroSlideWindow::on_btn_id_clicked()
         }
 
         // 根据数据库返回的信息，确定文件保存目录。保存目录命名格式为：病理号_切片号_诊断序号
+        LOGGER_INFO("Successfully get pathological information from database, pathological_id: {}, slice_id: {}, "
+                    "pathological_order: {}, ",
+                    ui->widget_camera->m_slideInfo->pathological_id, ui->widget_camera->m_slideInfo->slice_id,
+                    ui->widget_camera->m_slideInfo->pathological_order);
         QString pathological_id = QString::fromStdString(ui->widget_camera->m_slideInfo->pathological_id);
         QString slice_id = QString::fromStdString(ui->widget_camera->m_slideInfo->slice_id);
 
@@ -517,7 +525,7 @@ void MicroSlideWindow::on_btn_id_clicked()
     // 若未启用数据库功能，则文件保存目录默认为：PID_NA_0000_NA
     ui->widget_camera->m_saveDir = ui->widget_camera->m_saveRoot + "/" + PID + "_NA_0000_NA";
 
-#endif // FTP_SEND
+#endif // DB_SEND
 
     // 为当前病理切片创建保存目录
     QDir().mkpath(ui->widget_camera->m_saveDir);
@@ -588,10 +596,12 @@ void MicroSlideWindow::on_btn_confirm_doc_clicked()
 
                 emit this->signal_threadPoolFinished(doc_diagnose);
 
-#ifdef FTP_SEND
+#ifdef DB_SEND
                 // 医生点击确认后，再次向数据库发送视频诊断结果并补充医生诊断结果（AI处理线程中发送的信息是不包括医生诊断结果的）
+                WSAInit();
                 SOCKET dbClientSock;
-                int dbConnectRet = dbSockInit(dbClientSock, ui->widget_camera->m_dbAddr, ui->widget_camera->m_dbPort);
+                unsigned short port = static_cast<unsigned short>(ui->widget_camera->m_dbPort);
+                int dbConnectRet = dbSockInit(dbClientSock, ui->widget_camera->m_dbAddr, port, 5);
 
                 // 连接数据库成功，发送最后的视频诊断结果包
                 if (!dbConnectRet)
@@ -614,7 +624,7 @@ void MicroSlideWindow::on_btn_confirm_doc_clicked()
                         doc_diagnose.toStdString(),                                // 医生诊断结果
                         "A02",                                                     // 包的类型
                     };
-                    dbResultUpload(&video_res, dbClientSock);
+                    dbResultUpload(&video_res, dbClientSock, ui->widget_camera->m_dbAddr, port, 5);
                     dbSockClose(dbClientSock);
                 }
                 else
@@ -644,7 +654,7 @@ void MicroSlideWindow::on_btn_confirm_doc_clicked()
                          ui->widget_camera->m_slideInfo->pathological_id + "_" +
                              ui->widget_camera->m_slideInfo->slice_id + "_" +
                              std::to_string(ui->widget_camera->m_slideInfo->pathological_order) + ".json");
-#endif // FTP_SEND
+#endif // DB_SEND
                 return;
             }
         });
@@ -937,7 +947,7 @@ void MicroSlideWindow::slot_threadPoolFinished(QString diagnose)
     // 点击确诊按钮后，将病理号输入框设置为focus，方便扫描枪继续扫描病理号
     ui->lineEdit_id->setFocus();
 
-#ifndef FTP_SEND
+#ifndef DB_SEND
     // 根据诊断结果得到新的文件夹名
     QStringList parts = ui->widget_camera->m_saveDir.split("/"); // 分离保存路径
     QString folderName = parts[parts.length() - 1];
@@ -999,7 +1009,7 @@ void MicroSlideWindow::slot_threadPoolFinished(QString diagnose)
 
     QTimer::singleShot(1000, box, SLOT(close()));
     box->show();
-#endif // FTP_SEND
+#endif // DB_SEND
 
     ui->line_other->clear();
 

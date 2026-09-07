@@ -13,7 +13,7 @@
 #include <thread>
 
 /*向FTP数据库传输处理结果*/
-// #define FTP_SEND
+#define DB_SEND
 
 /*图片筛选相关*/
 #define SIMILAR_FRAME_COUNT 5

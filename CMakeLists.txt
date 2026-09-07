@@ -130,6 +130,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Multimedia
     Qt6::MultimediaWidgets
     Qt6::Sql
+    ws2_32
 )
 
 target_link_directories(${PROJECT_NAME} PRIVATE

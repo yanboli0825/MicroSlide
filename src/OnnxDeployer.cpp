@@ -37,11 +37,16 @@ OrtComponents::OrtComponents(const char* envName, const wchar_t* modelPath, int 
 OnnxDeployer::OnnxDeployer()
     : embeddingOrtComponents(std::make_unique<OrtComponents>("embedding", ONNX_CTRANS_PATH, INTRA_OP_NUM_THREADS))
     , polypOrtComponents(std::make_unique<OrtComponents>("polypInference", ONNX_POLYP_PATH, INTRA_OP_NUM_THREADS))
+    , lungOrtComponents(std::make_unique<OrtComponents>("lungInference", ONNX_LUNG_PATH, INTRA_OP_NUM_THREADS))
+    , lymphNodeOrtComponents(
+          std::make_unique<OrtComponents>("lymphNodeInference", ONNX_LYMPHNODE_PATH, INTRA_OP_NUM_THREADS))
     , mmrOrtComponents(std::make_unique<OrtComponents>("mmrInference", ONNX_MMR_PATH, INTRA_OP_NUM_THREADS))
     , frozenSectionOrtComponents(
           std::make_unique<OrtComponents>("frozenSectionInference", ONNX_FROZEN_PATH, INTRA_OP_NUM_THREADS))
 {
     slicePartToOrtComponentsMap = {{SLICESOURCE_GUT, polypOrtComponents.get()},
+                                   {SLICESOURCE_LUNG, lungOrtComponents.get()},
+                                   {SLICESOURCE_LYMPHNODE, lymphNodeOrtComponents.get()},
                                    {SLICESOURCE_UNKNOWN, frozenSectionOrtComponents.get()},
                                    {SLICESOURCE_STOMACH, frozenSectionOrtComponents.get()},
                                    {SLICESOURCE_PROSTATE, frozenSectionOrtComponents.get()}};

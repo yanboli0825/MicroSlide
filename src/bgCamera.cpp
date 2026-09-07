@@ -38,10 +38,9 @@ Q_DECLARE_METATYPE(std::shared_ptr<BestImage>);
 Q_DECLARE_METATYPE(std::shared_ptr<AIResult>);
 
 const std::map<std::string, std::vector<std::string>> bgCamera::slicePartToClassNamesMap = {
-    {SLICESOURCE_STOMACH, CLSNAME_STOMACH},
-    {SLICESOURCE_GUT, CLSNAME_GUT},
-    {SLICESOURCE_PROSTATE, CLSNAME_PROSTATE},
-    {SLICESOURCE_UNKNOWN, CLSNAME_KNOWN},
+    {SLICESOURCE_STOMACH, CLSNAME_STOMACH},     {SLICESOURCE_GUT, CLSNAME_GUT},
+    {SLICESOURCE_PROSTATE, CLSNAME_PROSTATE},   {SLICESOURCE_LUNG, CLSNAME_LUNG},
+    {SLICESOURCE_LYMPHNODE, CLSNAME_LYMPHNODE}, {SLICESOURCE_UNKNOWN, CLSNAME_KNOWN},
     {SLICESOURCE_DEFAULT, CLSNAME_DEFAULT}};
 
 bgCamera::bgCamera(QWidget* parent)
@@ -1349,9 +1348,11 @@ void processVideoStream(bgCamera* _bgcamera)
 
     std::unique_ptr<OnnxDeployer> deployer = std::make_unique<OnnxDeployer>();
 
-#ifdef FTP_SEND
+#ifdef DB_SEND
+    WSAInit();
     SOCKET dbClientSock;
-    int dbConnectRet = dbSockInit(dbClientSock, _bgcamera->m_dbAddr, _bgcamera->m_dbPort);
+    unsigned short port = static_cast<unsigned short>(_bgcamera->m_dbPort);
+    int dbConnectRet = dbSockInit(dbClientSock, _bgcamera->m_dbAddr, port, 5);
 
     // 连接数据库失败则弹出警告
     if (dbConnectRet)
@@ -1361,7 +1362,7 @@ void processVideoStream(bgCamera* _bgcamera)
             emit _bgcamera->signal_showDBDisconnectWarning();
         }
     }
-#endif // FTP_SEND
+#endif // DB_SEND
 
     while (_bgcamera->m_dealFlag == 1)
     {
@@ -1466,7 +1467,7 @@ void processVideoStream(bgCamera* _bgcamera)
                         "  PMS2: " + PMS2_res + ")";
         }
 
-#ifdef FTP_SEND
+#ifdef DB_SEND
         // 数据传输
         // 判断socket是否初始化成功
         if (!dbConnectRet)
@@ -1490,9 +1491,9 @@ void processVideoStream(bgCamera* _bgcamera)
                 "",                                                // 医生诊断结果,这里必须为空
                 "A02",                                             // 包的类型
             };
-            dbResultUpload(&video_res, dbClientSock);
+            dbResultUpload(&video_res, dbClientSock, _bgcamera->m_dbAddr, port, 5);
         }
-#endif // FTP_SEND
+#endif // DB_SEND
 
         // 数据落盘
         if (best_image->save == true)
@@ -1565,12 +1566,13 @@ void processVideoStream(bgCamera* _bgcamera)
         _bgcamera->m_numFreeThread++;
     }
 
-#ifdef FTP_SEND
+#ifdef DB_SEND
     if (!dbConnectRet)
     {
         dbSockClose(dbClientSock);
+        WSAClose();
     }
-#endif // FTP_SEND
+#endif // DB_SEND
 }
 
 void bgCamera::initThreadPool(const unsigned int deal_cnt)
@@ -1607,45 +1609,46 @@ void bgCamera::handleSingleImage(QImage img)
 {
     m_imgNumToFPGA++;
 
-    // 跳过FPGA，直接模拟读取结果进行调试 ----------
-    {
-        if (m_tempCounter == 8)
-        {
-            m_tempCounter = 0;
+    // // 跳过FPGA，直接模拟读取结果进行调试 ----------
+    // {
+    //     if (m_tempCounter == 8)
+    //     {
+    //         m_tempCounter = 0;
 
-            HL_IMG_POOL_NODE* img_node = m_img_pool->malloc_free_mem_pool();
+    //         HL_IMG_POOL_NODE* img_node = m_img_pool->malloc_free_mem_pool();
 
-            if (img_node == NULL)
-            {
-                qDebug() << "当前free链表没有空闲节点, 丢失图片: " << m_validImg->total_image_count;
-                m_validImg->clear();
-            }
-            else
-            {
-                m_validImgNum++;
-                signal_showPreviewImg(QPixmap::fromImage(m_validImg->image), m_validImgNum);
+    //         if (img_node == NULL)
+    //         {
+    //             qDebug() << "当前free链表没有空闲节点, 丢失图片: " << m_validImg->total_image_count;
+    //             m_validImg->clear();
+    //         }
+    //         else
+    //         {
+    //             m_validImgNum++;
+    //             signal_showPreviewImg(QPixmap::fromImage(m_validImg->image), m_validImgNum);
 
-                m_validImg =
-                    new BestImage(img.copy(), "2501111", m_validImgNum, 0, 0, 0, 0, 0, m_microMagnification, m_saveImg);
+    //             m_validImg =
+    //                 new BestImage(img.copy(), "2501111", m_validImgNum, 0, 0, 0, 0, 0, m_microMagnification,
+    //                 m_saveImg);
 
-                img_node->best_image = BestImage(m_validImg);
-                img_node->best_image.image_num = m_validImgNum;
+    //             img_node->best_image = BestImage(m_validImg);
+    //             img_node->best_image.image_num = m_validImgNum;
 
-                // 填充好内容后，将结点挂载到used_list链表上，由子线程处理
-                m_img_pool->fill_deal_mem_pool(img_node);
-                img_node = NULL;
-                m_validImg->clear();
-            }
+    //             // 填充好内容后，将结点挂载到used_list链表上，由子线程处理
+    //             m_img_pool->fill_deal_mem_pool(img_node);
+    //             img_node = NULL;
+    //             m_validImg->clear();
+    //         }
 
-            return;
-        }
-        else
-        {
-            m_tempCounter++;
-            return;
-        }
-        // --------------------------------------
-    }
+    //         return;
+    //     }
+    //     else
+    //     {
+    //         m_tempCounter++;
+    //         return;
+    //     }
+    // }
+    // // --------------------------------------
 
     // 定义图片质量评价指标
     unsigned int read_sharp = 16;      // 清晰度
